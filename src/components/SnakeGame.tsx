@@ -1,28 +1,40 @@
 "use client";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 
 type DirectionProps = "up" | "down" | "left" | "right";
+interface coordinatesProps {
+  x: number;
+  y: number;
+}
 
-const rows = 20;
-const cols = 20;
-const initialSnake = [[10, 10]];
+const gridSize = 20;
+const initialSnake: coordinatesProps[] = [{ x: 10, y: 10 }];
 const initialDirection: DirectionProps = "right";
+const initialFood: coordinatesProps = { x: -1, y: -1 };
 
 export const SnakeGame = () => {
-  const [snake, setSnake] = useState<number[][]>(initialSnake);
+  const [snake, setSnake] = useState<coordinatesProps[]>(initialSnake);
   const [direction, setDirection] = useState<DirectionProps>(initialDirection);
+  const [food, setFood] = useState<coordinatesProps>(initialFood);
 
   const createBoard = () => {
-    const board: number[][] = Array.from({ length: rows }, () =>
-      Array(cols).fill(0)
+    const board: number[][] = Array.from({ length: gridSize }, () =>
+      Array(gridSize).fill(0)
     );
-    for (const [x, y] of snake) {
+    for (const { x, y } of snake) {
       board[x][y] = 55;
+    }
+    if (food.x >= 0 && food.y >= 0) {
+      board[food.x][food.y] = 99;
     }
     return board;
   };
 
-  const boardGame = createBoard();
+  const generateFood = () => {
+    const x = Math.floor(Math.random() * gridSize);
+    const y = Math.floor(Math.random() * gridSize);
+    setFood({ x, y });
+  };
 
   const handleKeyPress = (event: React.KeyboardEvent<HTMLDivElement>) => {
     if (event.key === "ArrowUp" && direction !== "down") {
@@ -46,6 +58,13 @@ export const SnakeGame = () => {
       return;
     }
   };
+
+  const boardGame = createBoard();
+
+  useEffect(() => {
+    generateFood();
+  }, []);
+
   return (
     <div
       onKeyDown={handleKeyPress}
@@ -56,10 +75,12 @@ export const SnakeGame = () => {
       {boardGame.flat().map((cell, index) => (
         <div
           key={index}
-          className="h-10 border border-gray-400 flex items-center justify-center"
-        >
-          {cell}
-        </div>
+          className={`${
+            cell === 55 ? "bg-green-500" : ""
+          } h-10 border border-gray-400 flex items-center justify-center ${
+            cell === 99 ? "bg-red-500" : ""
+          }`}
+        ></div>
       ))}
     </div>
   );
