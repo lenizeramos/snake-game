@@ -30,6 +30,35 @@ export const SnakeGame = () => {
     return board;
   };
 
+  const moveSnake = React.useCallback(() => {
+      const newSnake = [...snake];
+      const head = { ...newSnake[0] };
+
+      switch (direction) {
+        case "up":
+          head.x = (head.x - 1 + gridSize) % gridSize;
+          break;
+        case "down":
+          head.x = (head.x + 1) % gridSize;
+          break;
+        case "left":
+          head.y = (head.y - 1 + gridSize) % gridSize;
+          break;
+        case "right":
+          head.y = (head.y + 1) % gridSize;
+          break;
+      }
+
+      newSnake.unshift(head);
+      if (head.x === food.x && head.y === food.y) {
+        generateFood();
+      } else {
+        newSnake.pop();
+      }
+
+      setSnake(newSnake);
+  }, [snake, direction, food]);
+
   const generateFood = () => {
     const x = Math.floor(Math.random() * gridSize);
     const y = Math.floor(Math.random() * gridSize);
@@ -39,22 +68,18 @@ export const SnakeGame = () => {
   const handleKeyPress = (event: React.KeyboardEvent<HTMLDivElement>) => {
     if (event.key === "ArrowUp" && direction !== "down") {
       setDirection("up");
-      console.log("up");
       return;
     }
     if (event.key === "ArrowDown" && direction !== "up") {
       setDirection("down");
-      console.log("down");
       return;
     }
     if (event.key === "ArrowLeft" && direction !== "right") {
       setDirection("left");
-      console.log("left");
       return;
     }
     if (event.key === "ArrowRight" && direction !== "left") {
       setDirection("right");
-      console.log("right");
       return;
     }
   };
@@ -64,6 +89,11 @@ export const SnakeGame = () => {
   useEffect(() => {
     generateFood();
   }, []);
+
+  useEffect(() => {
+    const interval = setInterval(moveSnake, 60);
+    return () => clearInterval(interval);
+  }, [snake, direction, moveSnake]);
 
   return (
     <div
