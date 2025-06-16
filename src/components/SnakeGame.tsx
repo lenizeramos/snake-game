@@ -199,7 +199,7 @@ export const SnakeGame = () => {
       </div>
 
       {(gameOver || hasWon) && (
-        <div className="absolute inset-0 bg-black bg-opacity-80 flex flex-col items-center justify-center text-center p-6">
+        <div className="absolute inset-0 flex flex-col items-center justify-center text-center p-6">
           <div className="bg-white p-6 rounded-xl shadow-2xl w-80">
             <h2
               className={`text-4xl font-bold mb-4 ${
