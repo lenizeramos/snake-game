@@ -25,6 +25,7 @@ export const SnakeGame = () => {
   const [gameOver, setGameOver] = useState(false);
   const [score, setScore] = useState(0);
   const [hasWon, setHasWon] = useState(false);
+  const [isGameStarted, setIsGameStarted] = useState(false);
 
   const generateFood = useCallback(() => {
     let newFood: Coordinates;
@@ -114,17 +115,18 @@ export const SnakeGame = () => {
 
   useEffect(() => {
     generateFood();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
-    if (gameOver || hasWon) return;
+    if (!isGameStarted || gameOver || hasWon) return;
 
     const interval = setInterval(() => {
       moveSnake();
       setCanChangeDirection(true);
     }, 120);
     return () => clearInterval(interval);
-  }, [moveSnake, gameOver, hasWon]);
+  }, [moveSnake, gameOver, hasWon, isGameStarted]);
 
   const boardGame = useMemo(() => {
     const board: number[][] = Array.from({ length: GRID_SIZE }, () =>
@@ -147,54 +149,79 @@ export const SnakeGame = () => {
     setGameOver(false);
     setScore(0);
     setHasWon(false);
+    setIsGameStarted(false);
   };
 
   return (
-    <div className={`grid grid-cols-20 bg-green-800 h-200 w-200`}>
-      <div className="absolute top-0 left-0 p-4 text-white">
-        <h1 className="text-2xl font-bold">Snake Game</h1>
-        <p className="text-lg text-black">Score: {score}</p>
+    <div className="relative min-h-screen bg-gradient-to-br from-gray-900 to-black flex flex-col items-center justify-center">
+      <div className="absolute top-4 left-4 text-white space-y-2">
+        <h1 className="text-4xl font-extrabold bg-gradient-to-r from-lime-400 to-green-500 text-transparent bg-clip-text drop-shadow-md">
+          Snake Game
+        </h1>
+        <div className="bg-yellow-400 text-black font-semibold px-3 py-1 rounded shadow inline-block">
+          Score: {score}
+        </div>
       </div>
-      {gameOver && (
-        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-white p-6 rounded-xl shadow-2xl w-80 text-center">
-          <h2 className="text-red-600 text-4xl font-extrabold mb-4">
-            Game Over!
-          </h2>
-          <p className="text-gray-700 mb-6">You collided with yourself.</p>
-          <button
-            onClick={resetGame}
-            className="w-full bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-4 rounded transition duration-200 ease-in-out"
-          >
-            Start Again
-          </button>
+
+      <div className="relative grid grid-cols-20 gap-[2px] bg-gray-800 p-2 rounded-xl shadow-inner border-4 border-green-700 mt-14">
+        {!isGameStarted && !gameOver && !hasWon && (
+          <div className="absolute inset-0 bg-black bg-opacity-80 flex flex-col items-center justify-center text-center p-6 z-10">
+            <div className="bg-white p-6 rounded-xl shadow-2xl w-80">
+              <h2 className="text-3xl font-bold text-green-600 mb-4">
+                Ready to Play?
+              </h2>
+              <button
+                onClick={() => setIsGameStarted(true)}
+                className="w-full bg-gradient-to-r from-green-500 to-lime-600 hover:from-green-600 hover:to-lime-700 text-white font-semibold py-2 px-4 rounded transition duration-200 ease-in-out"
+              >
+                Start Game
+              </button>
+            </div>
+          </div>
+        )}
+        {boardGame.flat().map((cell, index) => (
+          <div
+            key={index}
+            className={`w-6 h-6 sm:w-8 sm:h-8 rounded-sm ${
+              cell === 55
+                ? "bg-green-400 border border-green-700"
+                : cell === 99
+                ? "bg-red-500 border border-red-700"
+                : "bg-gray-100 border border-gray-300"
+            }`}
+          />
+        ))}
+      </div>
+
+      <div className="mt-4 text-gray-300">
+        <p>🎮 Use Arrow Keys to Move</p>
+        <p>🐍 Do not collide with your own body</p>
+      </div>
+
+      {(gameOver || hasWon) && (
+        <div className="absolute inset-0 bg-black bg-opacity-80 flex flex-col items-center justify-center text-center p-6">
+          <div className="bg-white p-6 rounded-xl shadow-2xl w-80">
+            <h2
+              className={`text-4xl font-bold mb-4 ${
+                gameOver ? "text-red-600" : "text-green-600"
+              }`}
+            >
+              {gameOver ? "Game Over!" : "You Win!"}
+            </h2>
+            <p className="text-gray-700 mb-6">
+              {gameOver
+                ? "You collided with yourself."
+                : "You filled the entire board!"}
+            </p>
+            <button
+              onClick={resetGame}
+              className="w-full bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white font-semibold py-2 px-4 rounded transition duration-200 ease-in-out"
+            >
+              {gameOver ? "Start Again" : "Play Again"}
+            </button>
+          </div>
         </div>
       )}
-      {hasWon && (
-        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-white p-6 rounded-xl shadow-2xl w-80 text-center">
-          <h2 className="text-green-600 text-4xl font-extrabold mb-4">
-            You Win!
-          </h2>
-          <p className="text-gray-700 mb-6">You have filled the entire board!</p>
-          <button
-            onClick={resetGame}
-            className="w-full bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-4 rounded transition duration-200 ease-in-out"
-          >
-            Play Again
-          </button>
-        </div>
-      )}
-      {boardGame.flat().map((cell, index) => (
-        <div
-          key={index}
-          className={`h-10 flex items-center justify-center ${
-            cell === 55
-              ? "bg-green-500 border border-black"
-              : cell === 99
-              ? "bg-red-500"
-              : "border border-gray-400"
-          }`}
-        ></div>
-      ))}
     </div>
   );
 };
