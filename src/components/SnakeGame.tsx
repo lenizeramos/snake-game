@@ -1,34 +1,36 @@
 "use client";
 import React, { useEffect, useState, useCallback, useMemo } from "react";
 
-type DirectionProps = "up" | "down" | "left" | "right";
+type Direction = "up" | "down" | "left" | "right";
 interface Coordinates {
   row: number;
   column: number;
 }
 
-const gridSize = 20;
-const initialSnake: Coordinates[] = [
-  { row: 10, column: 10 },
-  { row: 10, column: 9 },
-  { row: 10, column: 8 },
+const GRID_SIZE = 20;
+const INITIAL_SNAKE: Coordinates[] = [
+  { row: 0, column: 2 },
+  { row: 0, column: 1 },
+  { row: 0, column: 0 },
 ];
-const initialDirection: DirectionProps = "right";
-const initialFood: Coordinates = { row: -1, column: -1 };
+
+const INITIAL_DIRECTION: Direction = "right";
+const INITIAL_FOOD: Coordinates = { row: -1, column: -1 };
 
 export const SnakeGame = () => {
-  const [snake, setSnake] = useState<Coordinates[]>(initialSnake);
-  const [direction, setDirection] = useState<DirectionProps>(initialDirection);
-  const [food, setFood] = useState<Coordinates>(initialFood);
+  const [snake, setSnake] = useState<Coordinates[]>(INITIAL_SNAKE);
+  const [direction, setDirection] = useState<Direction>(INITIAL_DIRECTION);
+  const [food, setFood] = useState<Coordinates>(INITIAL_FOOD);
   const [canChangeDirection, setCanChangeDirection] = useState(true);
   const [gameOver, setGameOver] = useState(false);
   const [score, setScore] = useState(0);
+  const [hasWon, setHasWon] = useState(false);
 
   const generateFood = useCallback(() => {
     let newFood: Coordinates;
     do {
-      const row = Math.floor(Math.random() * gridSize);
-      const column = Math.floor(Math.random() * gridSize);
+      const row = Math.floor(Math.random() * GRID_SIZE);
+      const column = Math.floor(Math.random() * GRID_SIZE);
       newFood = { row, column };
     } while (
       snake.some(
@@ -38,7 +40,6 @@ export const SnakeGame = () => {
     );
     console.log("New food generated at:", newFood);
     setFood(newFood);
-
   }, [snake]);
 
   const moveSnake = useCallback(() => {
@@ -47,16 +48,16 @@ export const SnakeGame = () => {
 
     switch (direction) {
       case "up":
-        head.row = (head.row - 1 + gridSize) % gridSize;
+        head.row = (head.row - 1 + GRID_SIZE) % GRID_SIZE;
         break;
       case "down":
-        head.row = (head.row + 1) % gridSize;
+        head.row = (head.row + 1) % GRID_SIZE;
         break;
       case "left":
-        head.column = (head.column - 1 + gridSize) % gridSize;
+        head.column = (head.column - 1 + GRID_SIZE) % GRID_SIZE;
         break;
       case "right":
-        head.column = (head.column + 1) % gridSize;
+        head.column = (head.column + 1) % GRID_SIZE;
         break;
     }
 
@@ -77,6 +78,11 @@ export const SnakeGame = () => {
       )
     ) {
       setGameOver(true);
+      return;
+    }
+
+    if (newSnake.length === GRID_SIZE * GRID_SIZE) {
+      setHasWon(true);
       return;
     }
 
@@ -111,16 +117,18 @@ export const SnakeGame = () => {
   }, []);
 
   useEffect(() => {
+    if (gameOver || hasWon) return;
+
     const interval = setInterval(() => {
       moveSnake();
       setCanChangeDirection(true);
     }, 120);
     return () => clearInterval(interval);
-  }, [moveSnake]);
+  }, [moveSnake, gameOver, hasWon]);
 
   const boardGame = useMemo(() => {
-    const board: number[][] = Array.from({ length: gridSize }, () =>
-      Array(gridSize).fill(0)
+    const board: number[][] = Array.from({ length: GRID_SIZE }, () =>
+      Array(GRID_SIZE).fill(0)
     );
     for (const { row, column } of snake) {
       board[row][column] = 55;
@@ -132,12 +140,13 @@ export const SnakeGame = () => {
   }, [snake, food]);
 
   const resetGame = () => {
-    setSnake(initialSnake);
+    setSnake(INITIAL_SNAKE);
     generateFood();
-    setDirection(initialDirection);
+    setDirection(INITIAL_DIRECTION);
     setCanChangeDirection(true);
     setGameOver(false);
     setScore(0);
+    setHasWon(false);
   };
 
   return (
@@ -160,11 +169,29 @@ export const SnakeGame = () => {
           </button>
         </div>
       )}
+      {hasWon && (
+        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-white p-6 rounded-xl shadow-2xl w-80 text-center">
+          <h2 className="text-green-600 text-4xl font-extrabold mb-4">
+            You Win!
+          </h2>
+          <p className="text-gray-700 mb-6">You have filled the entire board!</p>
+          <button
+            onClick={resetGame}
+            className="w-full bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-4 rounded transition duration-200 ease-in-out"
+          >
+            Play Again
+          </button>
+        </div>
+      )}
       {boardGame.flat().map((cell, index) => (
         <div
           key={index}
           className={`h-10 flex items-center justify-center ${
-            cell === 55 ? "bg-green-500 border border-black" : cell === 99 ? "bg-red-500" : "border border-gray-400"
+            cell === 55
+              ? "bg-green-500 border border-black"
+              : cell === 99
+              ? "bg-red-500"
+              : "border border-gray-400"
           }`}
         ></div>
       ))}
